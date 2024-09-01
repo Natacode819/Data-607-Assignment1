@@ -1,0 +1,148 @@
+---
+title: "Congress demographics"
+author: "Nataliya Ferdinand"
+date: "2024-09-01"
+output: html_document
+---
+
+
+# **Introduction:**
+The article discusses the increasing age of the U.S. Congress, noting that it is older now than ever before, with a median age of 59 years. It highlights the challenges this aging body faces, particularly in understanding modern technology, and the impact of having older members on legislative priorities, which tend to focus more on issues concerning older Americans. The article also suggests that the age trend in Congress might plateau or decline as younger generations like Gen X and Millennials gradually replace the aging baby boomers. 
+
+
+The link to the article: 
+**https://fivethirtyeight.com/features/aging-congress-boomers/**
+
+Reading the whole .csv file.
+The path to the .csv file is from GitHub repository.
+
+The data has 29,120 rows. The output just shows first 10 rows. 
+
+```{r}
+file_path<-"https://raw.githubusercontent.com/Natacode819/Data-607-Assignment1/main/data_aging_congress.csv"
+datacongress<-read.csv(file_path)
+head(datacongress, 10)
+```
+**Checking missing values**
+
+There are various techniques in statistical programs to represent missing data. R uses NA. I checked whether there are any missing values in the data. I used is.na() function. The output shows that there are no missing data in any columns in the file.
+
+```{r}
+na_counts<-colSums(is.na(datacongress))
+print(na_counts)
+```
+
+Another way to check whether there are any missing values using sapply() function.
+
+```{r}
+na_columns<-sapply(datacongress,anyNA)
+print(na_columns)
+```
+
+**Summary function:**
+
+Sometimes it is useful to get a basic summary (min, max, median, mean, ...) for each variable of the data 
+
+```{r}
+summary(datacongress)
+```
+
+**Checking the data type**
+
+```{r}
+class(datacongress)
+```
+
+**List of all variables in the data**
+```{r}
+colnames(datacongress)
+```
+**Subset of data:**
+
+All of rows 1 through 20
+
+```{r}
+subset_data1<-datacongress[1:20, ]
+subset_data1
+```
+
+**Subset of data:**
+
+Selected only columns: "congress","start_date","chamber", "age_years".
+The output is for the first 20 rows
+
+```{r}
+subset_data2<-datacongress[, c("congress","start_date","chamber", "age_years"  ) ]
+head(subset_data2,20)
+```
+
+**Subset of data:**
+
+All records where age is > 65 
+
+The output is only for the first 20 rows
+```{r}
+subset_data3<-datacongress[datacongress$age_years>65,]
+head(subset_data3,20)
+```
+
+**Grooping of records based on "bioname" column**
+
+Since the same name listed multiple times, I decided to group names and take only those records that have the latest date in the "start_date" column
+
+```{r}
+library(dplyr)
+df_latest<-datacongress%>%group_by(bioname)%>%
+  filter(start_date==max(start_date))%>%ungroup()
+head(df_latest,20)
+```
+**Filtering records**
+
+For future graph, I want to select only those records who are in "House" chamber. 
+
+Also, I applied summarise() function to get the median age.
+
+```{r}
+df_house=df_latest%>%filter(chamber=="House")
+df_house_year =df_house%>%group_by(start_date)%>%summarise(age=median(age_years))
+df_house_result<-data.frame(df_house_year, type="House")
+head(df_house_result,20)
+```
+
+**Filtering records**
+
+Selected only those records who are in "Senate" chamber. 
+
+Also,summarise() function applied  to get the median age. 
+
+```{r}
+df_Senate=df_latest%>%filter(chamber=="Senate")
+df_Senate_year =df_Senate%>%group_by(start_date)%>%summarise(age=median(age_years))
+df_Senate_result<-data.frame(df_Senate_year, type="Senate")
+head(df_Senate_result,20)
+```
+**Combined filtered records**
+
+Two filtered records should be combined in order represent them together in the graph.
+
+```{r}
+df_combined<-rbind(df_house_result, df_Senate_result)
+head(df_combined,20)
+
+```
+**Graph** 
+
+A line graph was selected to show the median age of House and Senate members over years
+
+```{r}
+library(ggplot2)
+g<-ggplot(df_combined,aes(x=start_date, y=age, color=type, group=type))+
+  geom_line(size=1)+
+  geom_point(size=3)+
+  labs(title="Median age of the U.S. Senate and U.S. House by Congress, 1919 to 2023", x="Years", Y="Age")
+g
+```
+
+# **Conclusion:**
+
+The provided graph shows that "Congress today is older than it’s ever been".  
